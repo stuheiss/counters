@@ -5,13 +5,15 @@ start() ->
   register(counter, spawn(fun() -> loop(0) end)).
 
 stop() ->
-  whereis(counter) ! {stop, self()}.
+  counter ! {stop, self()},
+  ok.
 
 tick(N) ->
-  whereis(counter) ! {tick, N, self()}.
+  counter ! {tick, N, self()},
+  ok.
 
 read() ->
-  whereis(counter) ! {read, self()},
+  counter ! {read, self()},
   receive
     Reply -> Reply
   end.

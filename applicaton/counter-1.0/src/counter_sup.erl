@@ -10,7 +10,7 @@
 % Args is the initial state
 start_link(Args) ->
   io:format("~s:start_link(~p)~n",[?MODULE,Args]),
-  supervisor:start_link({local, ?MODULE}, ?MODULE, Args).
+  supervisor:start_link({global, ?MODULE}, ?MODULE, Args).
 % Start the counter with initial value of 0
 start_link() ->
   start_link(0).
@@ -30,4 +30,5 @@ init(Args) ->
 
 % shutdown the supervisor and counter
 stop() ->
-  exit(whereis(?MODULE), normal).
+  io:format("~s:stop()~n",[?MODULE]),
+  exit(global:whereis_name(?MODULE), normal).

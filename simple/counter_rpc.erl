@@ -6,13 +6,13 @@ start() ->
   start_server().
 
 stop() ->
-  rpc_cast(stop).
+  rpc_cast(counter, stop).
 
 read() ->
-  rpc_call(read).
+  rpc_call(counter, read).
 
 tick(N) ->
-  rpc_cast({tick, N}).
+  rpc_cast(counter, {tick, N}).
 
 %% Concurrent code
 rpc_call(Server, Msg) ->
@@ -21,14 +21,9 @@ rpc_call(Server, Msg) ->
     Reply -> Reply
   end.
 
-rpc_call(Msg) ->
-  rpc_call(whereis(counter), Msg).
-
 rpc_cast(Server, Msg) ->
-  Server ! {Msg, self()}.
-
-rpc_cast(Msg) ->
-  rpc_cast(whereis(counter), Msg).
+  Server ! {Msg, self()},
+  ok.
 
 start_server() ->
   register(counter, spawn(fun() -> loop(0) end)).
