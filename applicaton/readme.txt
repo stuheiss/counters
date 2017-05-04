@@ -1,10 +1,10 @@
 An application has a name and vsn and directory structure:
-  name=calc
+  name=counter
   vsn=1.0
-  dirs: calc-1.0/{ebin,src,priv,include}
+  dirs: counter-1.0/{ebin,src,priv,include}
 hrl files go in include
 erl files go in src
-calc.app and beam files go in ebin
+counter.app and beam files go in ebin
 assets go in priv
 
 An application has an app file ebin/<name>.app:
@@ -32,5 +32,5 @@ An application can be bundled into a release (<name>.rel):
   {erts, "5.8.3"},
   [{kernel, "2.14.3"},
    {stdlib, "1.17.3"},
-   {calc, "1.0"}]}.
+   {counter, "1.0"}]}.
 
