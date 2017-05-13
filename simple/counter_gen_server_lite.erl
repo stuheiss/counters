@@ -1,26 +1,14 @@
 -module(counter_gen_server_lite).
 
 -export([start_link/0,read/0,tick/1,stop/0]).
--export([init/1,handle_call/3,handle_cast/2]).
+-export([handle_call/3,handle_cast/2]).
 -export([loop/1,call/2,cast/2]).
-% add exports if you override defaults
--export([handle_info/2, terminate/2, code_change/3]).
 
 %%
-%% API (similar to gen_server conventions)
+%% Specific - API
 %%
-% use start_link() if no supervisor
-start_link() ->
-  Server=spawn_link(
-           fun() ->
-               {ok, State}=init([]),
-               loop(State) end
-          ),
-  register(counter, Server).
-
-% given Args, return initial State
-init(_Args) ->
-  {ok, 0}.
+start_link() -> % use spawn_link() when there is no supervisor
+  register(counter, spawn_link(fun() -> loop(0) end)).
 
 % read the counter
 read() ->
@@ -35,10 +23,27 @@ stop() ->
   cast(counter, stop).
 
 %%
-%% general (gen_server_lite)
+%% Specific - callbacks
+%%
+
+% read
+handle_call(read, _From, State) ->
+  Reply=State,
+  {reply, Reply, State}.
+
+% stop
+handle_cast(stop, State) ->
+  {stop, normal, State};
+% tick
+handle_cast({tick, N}, State) ->
+  NewState=State + N,
+  {noreply, NewState}.
+
+%%
+%% Generic (gen_server_lite)
 %%
 call(Server, Request) ->
-  Server ! {{request, Request}, self()},
+  Server ! {request, Request, self()},
   receive
     {reply, Reply} ->
       Reply
@@ -53,7 +58,7 @@ reply(From, Reply) ->
 
 loop(State) ->
   receive
-    {{request, Request}, From} ->
+    {request, Request, From} ->
       {reply, Reply, NewState}=handle_call(Request, From, State),
       reply(From, Reply),
       loop(NewState);
@@ -63,32 +68,5 @@ loop(State) ->
           loop(NewState);
         {stop, _Reason, _State} ->
           ok
-      end;
-    Unexpected ->
-      io:format("loop unexpected message ~p~n",[Unexpected]),
-      loop(State)
+      end
   end.
-
-%% callbacks
-% read
-handle_call(read, _From, State) ->
-  Reply=State,
-  {reply, Reply, State}.
-
-% stop
-handle_cast(stop, State) ->
-  {stop, normal, State};
-% tick
-handle_cast({tick, N}, State) ->
-  NewState=State + N,
-  {noreply, NewState}.
-
-% default callback implementations
-handle_info(_Info, State) ->
-  {noreply, State}.
-
-terminate(_Reason, _State) ->
-  ok.
-
-code_change(_OldVsn, State, _Extra) ->
-  {ok, State}.
