@@ -1,49 +1,45 @@
 % counters supervisor
+% counters_sup:start_link/2 starts the supervisor and first counter
+% counters_sup:start_child/2 starts another supervised counter
+% counters_sup:stop/0 stops a counter
 -module(counters_sup).
 -behaviour(supervisor).
 
--export([start_link/1, start_child/1, init/1, stop/0]).
+-export([start_link/2, start_child/2, init/1, stop/0]).
 
 %% API
-% Use start_link/1 in the supervisor module to start counters
+% Use start_link/2 in the supervisor module to start counters
 % Start the supervisor and first counter
 % Name is the counter name, Args is the initial state
-start_link([Name, Args]) ->
-  io:format("~s:start_link(~p)~n",[?MODULE,[Name,Args]]),
-  supervisor:start_link({local, ?MODULE}, ?MODULE, [Name,Args]);
-% Start the counter with initial value of 0
-start_link(Name) ->
-  start_link([Name, 0]).
+start_link(Name, Args) ->
+  io:format("~s:start_link(~p,~p)~n",[?MODULE,Name,Args]),
+  supervisor:start_link({local, ?MODULE}, ?MODULE, {Name,Args}).
 
 % Start another counter
 % Call as many times as desired
-start_child([Name, Args]) ->
-  io:format("~s:start_child(~p)~n",[?MODULE,[Name,Args]]),
-  ChildSpec={Name,                             % child_id()
-             {counters, start, [[Name,Args]]}, % mfargs()
-             permanent,                        % restart()
-             2000,                             % shutdown()
-             worker,                           % worker()
-             [counters]                        % modules()
-            },
-  supervisor:start_child(?MODULE, ChildSpec);
-% Start the counter with initial value of 0
-start_child(Name) ->
-  start_child([Name, 0]).
-
-% initialize a counter with a restart strategy
-init([Name,Args]) ->
-  io:format("~s:init(~p)~n",[?MODULE,[Name,Args]]),
-  SupFlags={one_for_one, 10, 3600},            % strategy(), intensity, period
-  ChildSpec={Name,                             % child_id()
-             {counters, start, [[Name,Args]]}, % mfargs()
-             permanent,                        % restart()
-             2000,                             % shutdown()
-             worker,                           % worker()
-             [counters]                        % modules()
-            },
-  {ok, {SupFlags, [ChildSpec]}}.
+start_child(Name, Args) ->
+  io:format("~s:start_child(~p,~p)~n",[?MODULE,Name,Args]),
+  ChildSpec=child(counters,Name,Args),
+  supervisor:start_child(?MODULE, ChildSpec).
 
 % shutdown the supervisor and all counters
 stop() ->
   exit(whereis(?MODULE), normal).
+
+% initialize a counter with a restart strategy
+init({Name,Args}) ->
+  io:format("~s:init(~p)~n",[?MODULE,{Name,Args}]),
+  SupFlags = #{strategy => one_for_one,
+               intensity => 10,
+               period => 3600},
+  ChildSpecList=[child(counters,Name,Args)],
+  {ok, {SupFlags, ChildSpecList}}.
+
+% helper to create one child_spec()
+child(Module,Name,Args) ->
+  #{id => Name,
+    start => {Module, start, [{Name,Args}]},
+    restart => permanent,
+    shutdown => 2000,
+    type => worker,
+    modules => [Module]}.
