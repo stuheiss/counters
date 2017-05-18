@@ -24,6 +24,8 @@ The gen_server_cluster counter (gen_server_cluster/counter.erl) introduces the g
 
 The code_server_counter (code_server/counter.erl) introduces the feature of hot code loading where running code can be changed on the fly thus allowing bug fixes and new features to a codebase without stopping a running instance and maintaining state.
 
+The counters_army directory contrasts spawning large numbers of counters in erlang, php, and php with threads.
+
 ## Behaviours
 
 A behaviour module provides reusable generic functionality. A callback module provides specific code for the implementation of a process. OTP provides five behaviours that cover the majority of all cases. They are:
