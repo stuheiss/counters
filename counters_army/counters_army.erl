@@ -15,9 +15,7 @@ demo(N) ->
   {T0,Counters}=timer:tc(fun()->start_counters(N,0,[]) end),
   io:format("Started ~w counters in ~w ms.~n",[length(Counters),T0/1000]),
 
-  % set the counters to 42
-  %{T1,_}=timer:tc(fun()->lists:map(fun(Pid) -> tick(Pid,42) end, Counters) end),
-  %io:format("Set all counters to 42 in ~w ms.~n",[T1/1000]),
+  % set the counters to values 1..N
   {T1,_}=timer:tc(fun()->lists:map(fun({Pid,V}) -> tick(Pid,V) end, lists:zip(Counters,lists:seq(1,N))) end),
   io:format("Set counters to [1..~w] in ~w ms.~n",[N,T1/1000]),
 
