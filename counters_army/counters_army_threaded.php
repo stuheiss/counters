@@ -93,24 +93,28 @@ if ($ncounters <= 0) {
 }
 
 if (isset($options['s'])) {
-    echo "create $ncounters simple counters\n";
     $t = -microtime(true);
+    echo "create $ncounters simple counters\n";
+    $s = 0;
     for ($i = 0; $i < $ncounters; ++$i) {
-        counterDo(42);
+        $s += counterDo($i + 1);
     }
+    echo "Sum $ncounters counters returns $s\n";
     $t += microtime(true);
     $t *= 1000;
-    echo "done in $t ms\n";
+    echo "Done in $t ms\n";
 }
 
 if (isset($options['t'])) {
     echo "create $ncounters pthread counters\n";
     $t = -microtime(true);
+    $s = 0;
     for ($i = 0; $i < $ncounters; ++$i) {
-        $future = Caller::call("counterDo", 123);
+        $future = Caller::call("counterDo", $i + 1);
         $future->join();
-        //echo $future->result . PHP_EOL;
+        $s += $future->result;
     }
+    echo "Sum $ncounters counters returns $s\n";
     $t += microtime(true);
     $t *= 1000;
     echo "done in $t ms\n";
@@ -121,10 +125,21 @@ if (isset($options['p'])) {
     $t = -microtime(true);
     $pids = array();
     $nprocesses = 0;
+
+    $fifoPath='fifo.fifo';
+    if(@stat($fifoPath)) unlink($fifoPath);
+    $mode=0600;
+    posix_mkfifo($fifoPath, $mode) or die("mkfifo failed\n");
+    $fifo = fopen($fifoPath, 'r+');
+    stream_set_blocking($fifo, false);
+
+    $s = 0;
     for ($i = 0; $i < $ncounters; ++$i) {
         if ($nprocesses >= $concurrency) {
             foreach ($pids as $pid) {
                 pcntl_wait($status);
+                $res = fgets($fifo);
+                $s += trim($res);
             }
             $pids = array();
             $nprocesses = 0;
@@ -136,13 +151,19 @@ if (isset($options['p'])) {
         } else if ($pid) {
             $pids[] = $pid;
         } else {
-            counterDo(42);
+            $res = counterDo($i + 1);
+            $fifo = fopen($fifoPath, 'w');
+            fwrite($fifo, "$res\n");
             exit;
         }
     }
     foreach ($pids as $pid) {
         pcntl_wait($status);
+        $res = fgets($fifo);
+        $s += trim($res);
     }
+    echo "Sum $ncounters counters returns $s\n";
+    if(@stat($fifoPath)) unlink($fifoPath);
     $t += microtime(true);
     $t *= 1000;
     echo "done in $t ms\n";

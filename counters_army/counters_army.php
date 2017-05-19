@@ -24,6 +24,7 @@ $counters=array();
 
 function demo($n) {
 
+    $t = -microtime(true);
     echo "Create $n counters\n";
     for ($i=0; $i<$n; ++$i) {
         $counters[$i]=new Counter;
@@ -48,6 +49,9 @@ function demo($n) {
     echo "Sum all counters\n";
     $v = array_reduce($counters, function($acc, $elem) { return $acc + $elem->read(); }, 0);
     echo "Sum $n counters returns $v\n";
+    $t += microtime(true);
+    $t *= 1000;
+    echo "Done in $t ms\n";
 }
 
 $n = $argv[1];
